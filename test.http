@@ -1,0 +1,31 @@
+@auth = ok_token
+
+### get
+GET http://localhost:8080/test?id=3
+
+
+### post
+Post http://localhost:8080/test
+Authorization: {{auth}}
+
+{
+    "id": 3,
+    "name": "test"
+}
+
+### csv
+Post http://localhost:8080/csv
+Authorization: {{auth}}
+Content-Type: multipart/form-data; boundary=boundary
+
+--boundary
+Content-Disposition: form-data; name="file"; filename="test.csv"
+Content-Type: text/csv
+
+< ./test.csv
+
+--boundary
+Content-Disposition: form-data; name="mode"
+
+diff
+--boundary--
