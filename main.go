@@ -21,11 +21,14 @@ func main() {
 func getRouter() chi.Router {
 	r := chi.NewRouter()
 	r.Get("/test", get)
+	// With(auth)で認証ミドルウェアを実行している
 	r.With(auth).Post("/test", post)
 	r.With(auth).Post("/csv", uploadCSV)
 	return r
 }
 
+// 認証のミドルウェア
+// ヘッダーのAuthorizationに「ok_token」が入ってない場合は401エラーで返す
 func auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth := r.Header.Get("Authorization")
@@ -37,6 +40,8 @@ func auth(next http.Handler) http.Handler {
 	})
 }
 
+// GETメソッド処理
+// 受け取ったIDを返すだけ
 func get(w http.ResponseWriter, r *http.Request) {
 	log.Println("Get!!")
 	id := r.FormValue("id")
@@ -54,15 +59,23 @@ func get(w http.ResponseWriter, r *http.Request) {
 	w.Write(v)
 }
 
+// POSTメソッド処理
+// 受け取ったID、名前を返すだけ
 func post(w http.ResponseWriter, r *http.Request) {
 	log.Println("Post!!")
-	id := r.PostFormValue("id")
-	name := r.PostFormValue("name")
+
 	type response struct {
-		ID   string `json:"id"`
+		ID   int    `json:"id"`
 		Name string `json:"name"`
 	}
-	res := response{ID: id, Name: name}
+	var res response
+
+	err := json.NewDecoder(r.Body).Decode(&res)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	log.Println(res)
 	http.Header.Add(w.Header(), "content-type", "application/json")
 	http.Header.Add(w.Header(), "Access-Control-Allow-Origin", "*")
 	v, err := json.Marshal(res)
@@ -73,6 +86,8 @@ func post(w http.ResponseWriter, r *http.Request) {
 	w.Write(v)
 }
 
+// CSVのアップロード
+// CSVの中身を出力している
 func uploadCSV(w http.ResponseWriter, r *http.Request) {
 	log.Println("CSV!!")
 	file, _, err := r.FormFile("file")
@@ -86,6 +101,7 @@ func uploadCSV(w http.ResponseWriter, r *http.Request) {
 	csvReader := csv.NewReader(file)
 	for i := 0; ; i++ {
 		record, err := csvReader.Read()
+		// 最後の行なので終了
 		if err == io.EOF {
 			log.Println("EOF")
 			break

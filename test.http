@@ -7,6 +7,7 @@ GET http://localhost:8080/test?id=3
 ### post
 Post http://localhost:8080/test
 Authorization: {{auth}}
+Content-Type: application/json
 
 {
     "id": 3,
